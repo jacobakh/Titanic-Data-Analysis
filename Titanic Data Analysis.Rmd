@@ -1,0 +1,128 @@
+---
+title: "Titanic Data Analysis"
+author: "Yakub Akhmerov"
+date: "November 29, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Intro 
+After spending some time searching through the datasets on Kaggle.com, I came across the titanic dataset. I chose this because not only was it a significant historical event globally, its history was also nodable in the technilogical aspect of the world. Since my interest lie in technology, this analysis would be a good introduction in truly applied data analytics. What follows is the report which was used for this analysis.
+
+#Goal
+The aim was to use the training dataset to predict the survival status of those in the testing dataset. I chose to do this by the approach of fitting a generalized linear model where survival status is the binary reponse variable (logistic regression). For the purposes of clarity, I will document my steps at the approrpriate coding chunks in the report.
+I start off by choosing the variables which are of revelance to the desired outcome. For example, ticket fare shouldn't have much of an effect on whether someone survived or not. While the number of siblings a person has will.
+
+
+#Load data & packages
+```{r}
+library(dplyr)
+library(SDMTools)
+setwd("~/Downloads")
+test <- read.csv('test.csv') #read in test data
+train <- read.csv('train.csv') #read in train data
+train <- train %>%
+  mutate(Sex = ifelse(Sex=="male", 1, 0)) %>%
+  mutate(Embarked = ifelse(Embarked=="C", 1, ifelse(Embarked=="S", 2, 3)))
+#Creating a quantitative representation of the Sex and Embarked by wrangling the data 
+#as there are at most 3 different categories between the 2 variables.
+```
+
+
+
+```{r}
+#I examined the pairs of the functions and for the purposes of modeling, I found it  
+#necessary to exclude the following variables: PassengerId, Name, Age, Ticket, Fare, and Cabin, as 
+#all of them had several different variation of values which were not relevent to the purposes  
+#of our study. I then proceeded to fit the model with the remaining variables.
+
+titanic.glm <- glm(Survived ~ Sex + Pclass + SibSp + Parch + Embarked, family=binomial, data=train)
+```
+
+
+#Fitting best model.
+I the performed model diagnostics in order to choose the best fit model.
+```{r}
+names(titanic.glm)
+titanic.glm$coef 
+mean(titanic.glm$fitted.values) #estimated 
+#Was curious if any variables neede to be thrown out. I conducted AIC and BIC to determine this.
+step(titanic.glm) #AIC
+step(titanic.glm, direction="both", k = log(nrow(train))) #BIC
+
+#Both the AIC and BIC had Survived ~ Sex + Pclass + SibSp as the final model, both 
+#resulting with a residual deviance of 819.3
+
+titanic.glm <- glm(Survived ~ Sex + Pclass + SibSp, family=binomial, data=train)
+```
+
+
+#Finding threshold
+In prediction analysis, it is best to pick a threshold which maximizes accuracy. Accuracy being the number of (TP + TN)/(P+N). Where TP is the number of True Positives (predicted to be positive and actually positive), TN is the number of True Negative(predicted negative, actually negative), and P and N being the number of real positives and real negatives respectively.
+```{r}
+#I discovered the confusion.matrix function through the SDMTools Rpackage, which computes 
+#the True Positives and Negatives along with the False Positives and Negatives
+#In order to choose the model with the best threshold. I generated 21 confusion matrices 
+#with thresholds ranging from .25 to .975 that I choose and selected the threshold with 
+#the most highest accuracy
+n=nrow(train)
+m0 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .025)
+m1 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .5)
+m2 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .10)
+m3 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .15)
+m4 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .20)
+m5 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .25)
+m6 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .30)
+m7 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .35)
+m8 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .40)
+m9 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .45)
+m10 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .50)
+m11 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .55)
+m12 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .60)
+m13 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .65)
+m14 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .70)
+m15 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .75)
+m16 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .80)
+m17 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .85)
+m18 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .90)
+m19 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .95)
+m20 = confusion.matrix(obs = titanic.glm$y, titanic.glm$fitted.values, threshold = .975)
+
+max( (m0[1,1] + m0[2,2]) / n, (m1[1,1] + m1[2,2])/n, (m2[1,1] + m2[2,2])/n, 
+     (m3[1,1] + m3[2,2])/n, (m4[1,1] + m4[2,2])/n, (m5[1,1] + m5[2,2])/n, 
+     (m6[1,1] + m6[2,2])/n, (m7[1,1] + m7[2,2])/n, (m8[1,1] + m8[2,2])/n, 
+     (m9[1,1] + m9[2,2])/n, (m10[1,1] + m10[2,2])/n, (m11[1,1] + m11[2,2])/n, 
+     (m12[1,1] + m12[2,2])/n, (m13[1,1] + m13[2,2])/n, (m14[1,1] + m14[2,2])/n, 
+     (m15[1,1] + m15[2,2])/n, (m16[1,1] + m16[2,2])/n, (m17[1,1] + m17[2,2])/n, 
+     (m18[1,1] + m18[2,2])/n, (m19[1,1] + m19[2,2])/n, (m20[1,1] + m20[2,2])/n)
+
+#The highest accuracy was 0.8035915, which was m12 with a threshold of .60
+
+(m12[1,1] + m12[2,2])/n
+```
+Granted, this approach was rather brute forced. This is due to my mathematical background in linear algebra, abstract algebra, and linear regression. I understood this theory behind the confusion matrix and accuracy through this approach. As an individual with such a background, the concreteness was enough for me to stick with it.
+
+#Applying the new knowledge to our train dataset
+```{r}
+#The purpose of yhat was to create a function to check which values pass the threshold 
+#in our model. I then planned to store them in a vector.
+yhat <- function(c, phat){ifelse(phat > c, 1, 0)}
+
+test <- test %>%
+  mutate(Sex = ifelse(Sex=="Male", 1, 0)) %>%
+  mutate(Embarked = ifelse(Embarked=="C", 1, ifelse(Embarked=="S", 2, 3)))
+#replicate the same quantitative variables as our model         
+
+prediction <- predict(titanic.glm, test, type = "response")
+
+phats <- yhat(.58, predict(titanic.glm, test, type = "response"))
+
+solution <- data.frame(PassengerID = test$PassengerId, Survived = phats)
+
+write.csv(solution, file = "solution5.csv", row.names=F)
+
+```
