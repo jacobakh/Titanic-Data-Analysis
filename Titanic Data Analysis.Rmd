@@ -10,10 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-#Intro 
+Intro:
 After spending some time searching through the datasets on Kaggle.com, I came across the titanic dataset. I chose this because not only was it a significant historical event globally, its history was also nodable in the technilogical aspect of the world. Since my interest lie in technology, this analysis would be a good introduction in truly applied data analytics. What follows is the report which was used for this analysis.
 
-#Goal
+Goal:
 The aim was to use the training dataset to predict the survival status of those in the testing dataset. I chose to do this by the approach of fitting a generalized linear model where survival status is the binary reponse variable (logistic regression). For the purposes of clarity, I will document my steps at the approrpriate coding chunks in the report.
 I start off by choosing the variables which are of revelance to the desired outcome. For example, ticket fare shouldn't have much of an effect on whether someone survived or not. While the number of siblings a person has will.
 
